@@ -1,0 +1,15 @@
+Features:
+    1. Events:
+        a. Video Complete
+        b. Conversation End
+        c. No Response
+
+    2. Appearance
+        a. Minimized chat window
+
+    3. Chat Features
+        a. Disabled TextBox when receiving response and playing video
+
+    4. DiaglogFlow Responses
+        a. Complete Conversation
+        b. Prompt Engineer for contextual response
