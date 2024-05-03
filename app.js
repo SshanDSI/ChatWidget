@@ -30,42 +30,54 @@ app.use(function (req, res, next) {
   next();
 });
 
-app.post('/send-msg',(req,res)=>{runSample(req.body.MSG).then(data=>{res.send({Reply:data})})})
+app.post('/send-msg',(req,res)=>{runSample(req.body.MSG, req.body.EVENT).then(data=>{res.send({Reply:data})})})
 
 
 
 
  // @param {string} projectId 'integral-kiln-396613'
 
-async function runSample(msg) {
+async function runSample(msg=null, event=null) {
 
   // Create a new session
   console.time('Dialogflow Request Time');
   const client = new SessionsClient({apiEndpoint: 'us-central1-dialogflow.googleapis.com'});
   const sessionPath = client.projectLocationAgentSessionPath(projectId, locationId, agentId, sessionId);
-
-  // The text query request.
   const request = {
     session: sessionPath,
     queryInput: {
-      text: {
-        text: msg,
-      },
       languageCode,
     },
   };
+
+  // The text query request.
+  if (event == null ) {
+    request['queryInput']['text']={};
+    request['queryInput']['text']['text']=msg;
+  }
+    
+  else {
+    request['queryInput']['event']={};
+    request['queryInput']['event']['event']=event;
+  }
+  
 
   // Send request and log result
   console.time("Intent Detect Time");
   const [response] = await client.detectIntent(request);
   console.timeEnd("Intent Detect Time");
   console.timeEnd('Dialogflow Request Time');
-  const allText = response.queryResult.responseMessages.map(message => message.text.text).flat();
+  const payload = response.queryResult.responseMessages[0].payload.fields;
+  console.log(payload['text']['listValue']['values'])
+  console.log(payload['youtubeVideoID'].stringValue)
+  console.log(payload['VideoPos'].numberValue)
+  console.log(payload['totalEle'].numberValue)
+  const allText = payload['text']['listValue']['values'];
+  console.log(typeof allText)
   console.log(`Agent Response: ${allText}`);
-    for (const message of response.queryResult.responseMessages) {
-      if (message.text) {
-        console.log(`Agent Response: ${message.text.text}`);
-        
+    for (const message of allText) {
+      if (message) {
+        console.log(message['stringValue']);
       }
       
     }
@@ -78,7 +90,7 @@ async function runSample(msg) {
       `Current Page: ${response.queryResult.currentPage.displayName}`
     );
   
-    return allText;
+    return payload;
 }
 
 app.listen(port,()=>{console.log("running on port "+port)})

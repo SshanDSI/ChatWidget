@@ -1,5 +1,5 @@
 var $messages = $('.messages-content'); //jquery format to get the element into a variable
-var VComplete=false; // flag for video Completion
+var VEvent="Message"; // flag for video events 
 var dizText = document.getElementById('MSG')
 
 //speech recognition 
@@ -63,6 +63,7 @@ $(window).load(function() {
     $('.message-input').val(null);
     updateScrollbar();
     DownScroll();
+    VEvent="Message";
 
   }
 
@@ -118,10 +119,14 @@ $(window).load(function() {
   // Function called when the player's state changes
   function onPlayerStateChange(event) {
     if (event.data === YT.PlayerState.ENDED) {
-      console.log("Video has Completed... Transition to text mode.. ");
-      VComplete=true;
-      fetchmsg();
+      console.log("Video has Completed... Prompt the user.. ");
+      VEvent="Complete";
     }
+    if (event.data === YT.PlayerState.PAUSED) {
+      console.log("Video has been Paused... Prompt the user.. ");
+      VEvent="Paused";
+    }
+    fetchmsg();
   }
 
   function serverMessage(response2) {
@@ -134,8 +139,8 @@ $(window).load(function() {
     DownScroll();
 
     //Disable Text box on Response
-    dizText.disabled=true;
-    console.log("Text Box Disabled   " + dizText.disabled)
+    // dizText.disabled=true;
+    // console.log("Text Box Disabled   " + dizText.disabled)
   }
 
   function fetchmsg(){
@@ -143,28 +148,36 @@ $(window).load(function() {
     var url = 'http://localhost:5000/send-msg';
     data = new URLSearchParams();
       
-    if (VComplete == false) {  
-      console.log(data)
-      console.log(document.getElementById("mymsg"))
-      console.log(new FormData(document.getElementById("mymsg")))
-
-      for (const pair of new FormData(document.getElementById("mymsg"))) {
+    switch (VEvent){
+      case "Complete":
+        var formdata = new FormData();
+        formdata.set('EVENT','VideoComplete');
+        for (const pair of formdata) {
           data.append(pair[0], pair[1]);
           console.log(pair)
-          console.log(data) 
+          console.log(data)
+        }
+        VEvent="Message";
+        break;
+      case "Message":
+        for (const pair of new FormData(document.getElementById("mymsg"))) {
+          data.append(pair[0], pair[1]);
+          console.log(pair)
+          console.log(data)
+        }
+        break
+      case "Paused":
+        var formdata = new FormData();
+        formdata.set('EVENT','VideoPaused');
+        for (const pair of formdata) {
+          data.append(pair[0], pair[1]);
+          console.log(pair)
+          console.log(data)
+          
+        }
+        VEvent="Message";
+        break;
       }
-    }
-
-    else{
-      VComplete = false;
-      var formdata = new FormData(document.getElementById("mymsg"));
-      formdata.set('MSG','Video Complete')
-      for (const pair of formdata) {
-        data.append(pair[0], pair[1]);
-        console.log(pair)
-        console.log(data)
-      }
-    }
       
     console.log("abc",data)
       fetch(url, {
@@ -172,24 +185,19 @@ $(window).load(function() {
         body:data
       }).then(res => res.json())
       .then(response => {
-        console.log(response.Reply);
-
-        for (let i=0; i< response.Reply.length; i++) {
-            if (response.Reply[i].includes('youtube.com')){
-              console.log("Received an Youtube URL...")
-              var ytube = response.Reply[i].split("/")
-              console.log(ytube[2])
-              setTimeout(function() {
-                onYouTubeIframeAPIReady(ytube[2]);
-              }, i* 550 * response.Reply.length);
-              
+          for (let i=0; i< response.Reply['totalEle'].numberValue; i++) {
+            // Video specific Condition
+            if (response.Reply['youtubeVideoID'].stringValue !== "" && response.Reply['VideoPos'].numberValue !== -1 && i == response.Reply['VideoPos'].numberValue) {
+                setTimeout(function() {
+                  onYouTubeIframeAPIReady(response.Reply['youtubeVideoID'].stringValue);
+                }, i * 550 * response.Reply['totalEle'].numberValue);
             }
+            // Message Specific Condition
             else{
-              setTimeout(function() {
-                serverMessage(response.Reply[i]);
-              }, i* 550 * response.Reply.length);
-            }
-            
+            setTimeout(function() {
+              serverMessage(response.Reply.text.listValue.values[i]['stringValue']);
+            }, i* 550 * response.Reply['totalEle'].numberValue);
+          }
         }
       
       })

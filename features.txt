@@ -3,6 +3,7 @@ Features:
         a. Video Complete
         b. Conversation End
         c. No Response
+        d. Video Paused.
 
     2. Appearance
         a. Minimized chat window
@@ -13,3 +14,9 @@ Features:
     4. DiaglogFlow Responses
         a. Complete Conversation
         b. Prompt Engineer for contextual response
+
+    5. Data Collection
+        a. Design a real time data collection pipeline (Use AT&T Dashboard to see any transcript features or API's to collect the same.)
+
+    6. Code Changes
+        a. Get the Payload format as compared to plain text. (Efficient)
