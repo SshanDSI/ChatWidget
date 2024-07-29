@@ -4,6 +4,7 @@ Features:
         b. Conversation End
         c. No Response
         d. Video Paused.
+        e. Only Custom Events in place
 
     2. Appearance
         a. Minimized chat window

@@ -121,12 +121,17 @@ $(window).load(function() {
     if (event.data === YT.PlayerState.ENDED) {
       console.log("Video has Completed... Prompt the user.. ");
       VEvent="Complete";
+      fetchmsg();
     }
-    if (event.data === YT.PlayerState.PAUSED) {
+    else if (event.data === YT.PlayerState.PAUSED) {
       console.log("Video has been Paused... Prompt the user.. ");
       VEvent="Paused";
+      fetchmsg();
     }
-    fetchmsg();
+    else{
+      console.log("Please check for other issues... with the video")
+    }
+    
   }
 
   function serverMessage(response2) {
@@ -173,7 +178,6 @@ $(window).load(function() {
           data.append(pair[0], pair[1]);
           console.log(pair)
           console.log(data)
-          
         }
         VEvent="Message";
         break;
