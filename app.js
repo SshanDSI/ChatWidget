@@ -68,6 +68,8 @@ async function runSample(msg=null, event=null) {
   console.timeEnd("Intent Detect Time");
   console.timeEnd('Dialogflow Request Time');
   const payload = response.queryResult.responseMessages[0].payload.fields;
+  const payload2 = response.queryResult.responseMessages[1].payload.fields
+  console.log(payload2['text']['listValue']['values'])
   console.log(payload['text']['listValue']['values'])
   console.log(payload['youtubeVideoID'].stringValue)
   console.log(payload['VideoPos'].numberValue)
