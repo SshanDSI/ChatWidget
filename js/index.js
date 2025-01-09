@@ -189,20 +189,26 @@ $(window).load(function() {
         body:data
       }).then(res => res.json())
       .then(response => {
-          for (let i=0; i< response.Reply['totalEle'].numberValue; i++) {
+        for (let k=0; k<response.Reply.length; k++) {
+          console.log(response.Reply[k].payload.fields.text.listValue.values[0]['stringValue'])
+          for (let i=0; i< response.Reply[k].payload.fields['totalEle'].numberValue; i++) {
             // Video specific Condition
-            if (response.Reply['youtubeVideoID'].stringValue !== "" && response.Reply['VideoPos'].numberValue !== -1 && i == response.Reply['VideoPos'].numberValue) {
+            console.log(response.Reply[k].payload.fields['youtubeVideoID'].stringValue)
+            if (response.Reply[k].payload.fields['youtubeVideoID'].stringValue !== "" && response.Reply[k].payload.fields['VideoPos'].numberValue !== -1 && i == response.Reply[k].payload.fields['VideoPos'].numberValue) {
                 setTimeout(function() {
-                  onYouTubeIframeAPIReady(response.Reply['youtubeVideoID'].stringValue);
-                }, i * 550 * response.Reply['totalEle'].numberValue);
+                  onYouTubeIframeAPIReady(response.Reply[k].payload.fields['youtubeVideoID'].stringValue);
+                }, (k+1)*(i+1) * 550 * response.Reply[k].payload.fields['totalEle'].numberValue);
             }
             // Message Specific Condition
             else{
             setTimeout(function() {
-              serverMessage(response.Reply.text.listValue.values[i]['stringValue']);
-            }, i* 550 * response.Reply['totalEle'].numberValue);
+               console.log(response.Reply[k].payload.fields.text.listValue.values.length)
+               console.log(i)
+              serverMessage(response.Reply[k].payload.fields.text.listValue.values[i]['stringValue']);
+            }, (k+1)*(i+1)* 550 * response.Reply[k].payload.fields['totalEle'].numberValue);
           }
         }
+      } 
       
       })
         .catch(error => console.error('Error h:', error));

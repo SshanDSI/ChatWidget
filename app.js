@@ -67,30 +67,25 @@ async function runSample(msg=null, event=null) {
   const [response] = await client.detectIntent(request);
   console.timeEnd("Intent Detect Time");
   console.timeEnd('Dialogflow Request Time');
-  const payload = response.queryResult.responseMessages[0].payload.fields;
-  const payload2 = response.queryResult.responseMessages[1].payload.fields
-  console.log(payload2['text']['listValue']['values'])
-  console.log(payload['text']['listValue']['values'])
-  console.log(payload['youtubeVideoID'].stringValue)
-  console.log(payload['VideoPos'].numberValue)
-  console.log(payload['totalEle'].numberValue)
-  const allText = payload['text']['listValue']['values'];
-  console.log(typeof allText)
-  console.log(`Agent Response: ${allText}`);
-    for (const message of allText) {
-      if (message) {
-        console.log(message['stringValue']);
-      }
+  const payload = response.queryResult.responseMessages
+  
+  // const allText = payload['text']['listValue']['values'];
+  // console.log(typeof allText)
+  // console.log(`Agent Response: ${allText}`);
+  //   for (const message of allText) {
+  //     if (message) {
+  //       console.log(message['stringValue']);
+  //     }
       
-    }
-    if (response.queryResult.match.intent) {
-      console.log(
-        `Matched Intent: ${response.queryResult.match.intent.displayName}`
-      );
-    }
-    console.log(
-      `Current Page: ${response.queryResult.currentPage.displayName}`
-    );
+  //   }
+  //   if (response.queryResult.match.intent) {
+  //     console.log(
+  //       `Matched Intent: ${response.queryResult.match.intent.displayName}`
+  //     );
+  //   }
+  //   console.log(
+  //     `Current Page: ${response.queryResult.currentPage.displayName}`
+  //   );
   
     return payload;
 }
