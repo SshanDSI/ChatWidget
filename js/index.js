@@ -1,6 +1,7 @@
 var $messages = $('.messages-content'); //jquery format to get the element into a variable
 var VEvent="Message"; // flag for video events 
 var dizText = document.getElementById('MSG')
+let promiseChain = Promise.resolve();
 
 //speech recognition 
 // This is a try catch to setup the speech recognition
@@ -52,8 +53,8 @@ $(window).load(function() {
 
 
 
-  function insertMessage() {
-    msg = $('.message-input').val();
+  function insertMessage(msg) {
+    // msg = $('.message-input').val();
     if ($.trim(msg) == '') {
       return false;
     }
@@ -64,19 +65,26 @@ $(window).load(function() {
     updateScrollbar();
     DownScroll();
     VEvent="Message";
-
   }
 
   // detects when a submit is made
   document.getElementById("mymsg").onsubmit = (e)=>{
     e.preventDefault() 
-    insertMessage();
+    insertMessage($('.message-input').val());
     console.log('A message was submitted ....');
 
 
     // serverMessage("hello");
     // speechSynthesis.speak( new SpeechSynthesisUtterance("hello"))
   }
+
+  // detects when a click is made on a button
+  document.addEventListener('click', (event) => {
+    if (event.target.classList.contains('chat-buttons')) {
+        const buttonText = event.target.innerText || event.target.textContent;
+        insertMessage(buttonText);
+    }
+});
 
   // Function called when the YouTube Player API is ready
   function onYouTubeIframeAPIReady(videoId) {
@@ -135,18 +143,29 @@ $(window).load(function() {
   }
 
   function serverMessage(response2) {
-    if ($('.message-input').val() != '') {
-      return false;
+    promiseChain = promiseChain.then(() => {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          if ($('.message-input').val() != '') {
+            return false;
+          }
+          // $('.message.loading').remove();
+          $('<div class="message new"><figure class="avatar"><img src="css/DSI.jpg" /></figure>' + response2 + '</div>').appendTo($('.mCSB_container')).addClass('new');
+          updateScrollbar();
+          DownScroll();
+          resolve();
+        }, 1000);
+
+
+        }) 
+      })
     }
-    // $('.message.loading').remove();
-    $('<div class="message new"><figure class="avatar"><img src="css/DSI.jpg" /></figure>' + response2 + '</div>').appendTo($('.mCSB_container')).addClass('new');
-    updateScrollbar();
-    DownScroll();
+    
 
     //Disable Text box on Response
     // dizText.disabled=true;
     // console.log("Text Box Disabled   " + dizText.disabled)
-  }
+
 
   function fetchmsg(){
 
@@ -201,11 +220,7 @@ $(window).load(function() {
             }
             // Message Specific Condition
             else{
-            setTimeout(function() {
-               console.log(response.Reply[k].payload.fields.text.listValue.values.length)
-               console.log(i)
               serverMessage(response.Reply[k].payload.fields.text.listValue.values[i]['stringValue']);
-            }, (k+1)*(i+1)* 550 * response.Reply[k].payload.fields['totalEle'].numberValue);
           }
         }
       } 
