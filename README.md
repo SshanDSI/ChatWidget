@@ -9,4 +9,6 @@ The widget now features the following:
 - Has YouTube events generated automatically
 - Promise Chaining in nodeJs for sequential message delivery
 
+## Next Steps..
+- Host the chatbot on the github pages to be able to share the same internally.
 More to be added..
