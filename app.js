@@ -33,8 +33,6 @@ app.use(function (req, res, next) {
 app.post('/send-msg',(req,res)=>{runSample(req.body.MSG, req.body.EVENT).then(data=>{res.send({Reply:data})})})
 
 
-
-
  // @param {string} projectId 'integral-kiln-396613'
 
 async function runSample(msg=null, event=null) {
