@@ -3,6 +3,8 @@ var VEvent="Message"; // flag for video events
 var dizText = document.getElementById('MSG')
 let promiseChain = Promise.resolve();
 
+
+
 //speech recognition 
 // This is a try catch to setup the speech recognition
 try {
@@ -58,8 +60,9 @@ $(window).load(function() {
     if ($.trim(msg) == '') {
       return false;
     }
+
     $('<div class="message message-personal">' + msg + '</div>').appendTo($('.mCSB_container')).addClass('new');
-    fetchmsg() 
+    fetchmsg_promise() 
     
     $('.message-input').val(null);
     updateScrollbar();
@@ -116,6 +119,42 @@ $(window).load(function() {
     DownScroll();
   }
 
+  // Function called when the YouTube Player API is ready (promise functionality for a sequential execution)
+  function onYouTubeIframeAPIReady_promise(videoId) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // regular function code
+        const date = new Date();
+    const min = date.getMinutes()
+    const sec = date.getSeconds()
+    var ran_id = min.toString() + sec.toString(); 
+    $('<div class="message new" id="Video-'+ ran_id + '"><figure class="avatar"><img src="css/DSI.jpg" /></figure></div>').appendTo($('.mCSB_container')).addClass('new');
+    myVideo = new YT.Player('Video-'+ ran_id, {
+      width:'640',
+      height : '360',
+      videoId : videoId,
+      playerVars:{
+        autoplay : 1,
+        controls : 1,
+        enablejsapi:1,
+        playsinline: 1,
+        rel :0,
+      },
+      events: {
+        'onReady':onPlayerReady,
+        'onStateChange': onPlayerStateChange,
+        'onError':onPlayerError,
+      }
+    } ,console.log('Youtube IFrame API Ready....')
+  );
+
+    updateScrollbar();
+    DownScroll();
+    resolve(); // Resolve after the task is complete
+      },1000);
+    });
+  }
+
   function onPlayerReady(event) {
     console.log("Video is ready to be played... Transition to Video mode.. ");
   }
@@ -129,12 +168,12 @@ $(window).load(function() {
     if (event.data === YT.PlayerState.ENDED) {
       console.log("Video has Completed... Prompt the user.. ");
       VEvent="Complete";
-      fetchmsg();
+      fetchmsg_promise();
     }
     else if (event.data === YT.PlayerState.PAUSED) {
       console.log("Video has been Paused... Prompt the user.. ");
       VEvent="Paused";
-      fetchmsg();
+      fetchmsg_promise();
     }
     else{
       console.log("Please check for other issues... with the video")
@@ -149,8 +188,13 @@ $(window).load(function() {
           if ($('.message-input').val() != '') {
             return false;
           }
-          // $('.message.loading').remove();
+          const Element = $(response2);
+          if (Element.is(':button')) {
+            $('<div class="message new">' + response2 + '</div>').appendTo($('.mCSB_container')).addClass('new');
+          }
+          else{
           $('<div class="message new"><figure class="avatar"><img src="css/DSI.jpg" /></figure>' + response2 + '</div>').appendTo($('.mCSB_container')).addClass('new');
+          }
           updateScrollbar();
           DownScroll();
           resolve();
@@ -160,11 +204,29 @@ $(window).load(function() {
         }) 
       })
     }
-    
 
-    //Disable Text box on Response
-    // dizText.disabled=true;
-    // console.log("Text Box Disabled   " + dizText.disabled)
+    // To print out the data from chatbot using the promise functionality for sequential execution
+    function serverMessage_promise(response2) {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            if ($('.message-input').val() != '') {
+              return false;
+            }
+            const Element = $(response2);
+            if (Element.is(':button')) {
+              $('<div class="message new">' + response2 + '</div>').appendTo($('.mCSB_container')).addClass('new');
+            }
+            else{
+            $('<div class="message new"><figure class="avatar"><img src="css/DSI.jpg" /></figure>' + response2 + '</div>').appendTo($('.mCSB_container')).addClass('new');
+            }
+            updateScrollbar();
+            DownScroll();
+            resolve();
+          }, 1000);
+  
+  
+          }) 
+      }
 
 
   function fetchmsg(){
@@ -202,21 +264,27 @@ $(window).load(function() {
         break;
       }
       
+    let adj=0
     console.log("abc",data)
       fetch(url, {
         method: 'POST',
         body:data
       }).then(res => res.json())
       .then(response => {
+        console.log(response.Reply)
         for (let k=0; k<response.Reply.length; k++) {
-          console.log(response.Reply[k].payload.fields.text.listValue.values[0]['stringValue'])
-          for (let i=0; i< response.Reply[k].payload.fields['totalEle'].numberValue; i++) {
+          // console.log(response.Reply[k].payload.fields.text.listValue.values[k]['stringValue'])
+          if (response.Reply[k].payload.fields?.text) { 
+            if (response.Reply[k].payload.fields['VideoPos'].numberValue !== -1){
+              adj = 1;
+            }
+          for (let i=0; i< adj + response.Reply[k].payload.fields.text.listValue.values.length; i++) {
             // Video specific Condition
             console.log(response.Reply[k].payload.fields['youtubeVideoID'].stringValue)
             if (response.Reply[k].payload.fields['youtubeVideoID'].stringValue !== "" && response.Reply[k].payload.fields['VideoPos'].numberValue !== -1 && i == response.Reply[k].payload.fields['VideoPos'].numberValue) {
                 setTimeout(function() {
-                  onYouTubeIframeAPIReady(response.Reply[k].payload.fields['youtubeVideoID'].stringValue);
-                }, (k+1)*(i+1) * 550 * response.Reply[k].payload.fields['totalEle'].numberValue);
+                  onYouTubeIframeAPIReady(response.Reply[k].payload.fields['youtubeVideoID'].stringValue);;
+                }, (k+1)*(i+1) * 100* response.Reply[k].payload.fields.text.listValue.values.length);
             }
             // Message Specific Condition
             else{
@@ -224,7 +292,76 @@ $(window).load(function() {
           }
         }
       } 
+    }
+      })
+        .catch(error => console.error('Error h:', error));
+
+  }
+
+  function fetchmsg_promise(){
+
+    var url = 'http://localhost:5000/send-msg';
+    data = new URLSearchParams();
       
+    switch (VEvent){
+      case "Complete":
+        var formdata = new FormData();
+        formdata.set('EVENT','VideoComplete');
+        for (const pair of formdata) {
+          data.append(pair[0], pair[1]);
+          console.log(pair)
+          console.log(data)
+        }
+        VEvent="Message";
+        break;
+      case "Message":
+        for (const pair of new FormData(document.getElementById("mymsg"))) {
+          data.append(pair[0], pair[1]);
+          console.log(pair)
+          console.log(data)
+        }
+        break
+      case "Paused":
+        var formdata = new FormData();
+        formdata.set('EVENT','VideoPaused');
+        for (const pair of formdata) {
+          data.append(pair[0], pair[1]);
+          console.log(pair)
+          console.log(data)
+        }
+        VEvent="Message";
+        break;
+      }
+      
+    let adj=0
+    console.log("abc",data)
+      fetch(url, {
+        method: 'POST',
+        body:data
+      }).then(res => res.json())
+      .then(response => {
+        console.log(response.Reply)
+        for (let k=0; k<response.Reply.length; k++) {
+          // console.log(response.Reply[k].payload.fields.text.listValue.values[k]['stringValue'])
+          if (response.Reply[k].payload.fields?.text) { 
+            if (response.Reply[k].payload.fields['VideoPos'].numberValue !== -1){
+              adj = 1;
+            }
+          for (let i=0; i< adj + response.Reply[k].payload.fields.text.listValue.values.length; i++) {
+            // Video specific Condition
+            console.log(response.Reply[k].payload.fields['youtubeVideoID'].stringValue)
+            if (response.Reply[k].payload.fields['youtubeVideoID'].stringValue !== "" && response.Reply[k].payload.fields['VideoPos'].numberValue !== -1 && i == response.Reply[k].payload.fields['VideoPos'].numberValue) {
+                setTimeout(function() {
+                  onYouTubeIframeAPIReady(response.Reply[k].payload.fields['youtubeVideoID'].stringValue);;
+                }, (k+1)*(i+1) * 100* response.Reply[k].payload.fields.text.listValue.values.length);
+            }
+            // Message Specific Condition
+            else{
+              serverMessage(response.Reply[k].payload.fields.text.listValue.values[i]['stringValue']);
+          }
+        }
+      } 
+    }
       })
         .catch(error => console.error('Error h:', error));
 
