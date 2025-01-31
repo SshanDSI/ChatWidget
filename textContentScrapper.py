@@ -4,7 +4,7 @@ import re
 import time
 
 # Step 1: Fetch the webpage content
-URL = "https://deukspine.com/treatment-options/deuk-plasma-rhizotomy/benefits-of-si-joint-dpr"
+URL = "https://deukspine.com/mri-review-new"
 response = requests.get(URL)
 if response.status_code != 200:
     print(f"Failed to fetch the page. Status code: {response.status_code}")
@@ -22,7 +22,7 @@ if nav:
 
 # Step 4: Extract all headings, paragraphs, and list items
 tags = soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "li","a"])
-f= open("DataStore/SI-Joint-DPR.txt","w")
+f= open("DataStore/free-mri-review","w")
 
 f.write("\n")
 f.write("\n")

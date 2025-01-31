@@ -298,6 +298,8 @@ $(window).load(function() {
 
   }
 
+  let promiseChain = Promise.resolve(); //starting with an empty resoved promise
+
   function fetchmsg_promise(){
 
     var url = 'http://localhost:5000/send-msg';
@@ -333,7 +335,6 @@ $(window).load(function() {
         break;
       }
       
-    let adj=0
     console.log("abc",data)
       fetch(url, {
         method: 'POST',
@@ -342,23 +343,26 @@ $(window).load(function() {
       .then(response => {
         console.log(response.Reply)
         for (let k=0; k<response.Reply.length; k++) {
-          // console.log(response.Reply[k].payload.fields.text.listValue.values[k]['stringValue'])
-          if (response.Reply[k].payload.fields?.text) { 
-            if (response.Reply[k].payload.fields['VideoPos'].numberValue !== -1){
-              adj = 1;
-            }
-          for (let i=0; i< adj + response.Reply[k].payload.fields.text.listValue.values.length; i++) {
+          if (response.Reply[k].payload.fields?.data) { 
+          for (let i=0; i< response.Reply[k].payload.fields.data.listValue.values.length; i++) {
             // Video specific Condition
-            console.log(response.Reply[k].payload.fields['youtubeVideoID'].stringValue)
-            if (response.Reply[k].payload.fields['youtubeVideoID'].stringValue !== "" && response.Reply[k].payload.fields['VideoPos'].numberValue !== -1 && i == response.Reply[k].payload.fields['VideoPos'].numberValue) {
-                setTimeout(function() {
-                  onYouTubeIframeAPIReady(response.Reply[k].payload.fields['youtubeVideoID'].stringValue);;
-                }, (k+1)*(i+1) * 100* response.Reply[k].payload.fields.text.listValue.values.length);
-            }
-            // Message Specific Condition
-            else{
-              serverMessage(response.Reply[k].payload.fields.text.listValue.values[i]['stringValue']);
-          }
+            promiseChain = promiseChain.then(() => {
+              if (response.Reply[k].payload.fields.data.listValue.values[i].structValue.fields.type['stringValue'] == 'video'){
+                return onYouTubeIframeAPIReady_promise(response.Reply[k].payload.fields.data.listValue.values[i].structValue.fields.value['stringValue']);
+              }
+              else if (response.Reply[k].payload.fields.data.listValue.values[i].structValue.fields.type['stringValue'] == 'RAG'){
+                console.log("You are in the Datastore condition")
+                if (response.Reply[k].payload.fields.data.listValue.values[i].structValue.fields.RAG_Score['stringValue'] == 'HIGH' || response.Reply[k].payload.fields.data.listValue.values[i].structValue.fields.RAG_Score['stringValue'] == 'VERY_HIGH'){
+                  return serverMessage_promise(response.Reply[k].payload.fields.data.listValue.values[i].structValue.fields.value['stringValue']);
+                }
+                else{
+                  return serverMessage_promise("<p> Sorry.. I did not understand that. Can you please rephrase the question for me ?</p>");
+                }
+              }
+              else{
+                return serverMessage_promise(response.Reply[k].payload.fields.data.listValue.values[i].structValue.fields.value['stringValue']);
+              }
+            });
         }
       } 
     }

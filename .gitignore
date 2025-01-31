@@ -4,3 +4,4 @@ isolate-000001965E26D240-19676-v8.log
 node_modules/*
 .vscode/*
 .gitignore
+.env
