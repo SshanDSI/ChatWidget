@@ -22,6 +22,8 @@ const languageCode = 'en';
 
 // List of objects
 data = []
+let request_stamp = Date.now();
+let response_stamp = Date.now();
 
 //setting an environment variable to access the key file
 process.env.GOOGLE_APPLICATION_CREDENTIALS = 'C:/Users/Sshanbhag/Documents/ChatWidget/integral-kiln-396613-6124bf80968e.json';
@@ -76,6 +78,7 @@ function addNewEntry(newEntry) {
 
 async function runSample(msg=null, event=null) {
 
+  request_stamp = Date.now();
   // Create a new session
   console.time('Dialogflow Request Time');
   const client = new SessionsClient({apiEndpoint: 'us-central1-dialogflow.googleapis.com'});
@@ -151,8 +154,23 @@ catch (error){
   //   console.log(
   //     `Current Page: ${response.queryResult.currentPage.displayName}`
   //   );
-  
+    response_stamp = Date.now();
+
     return payload;
 }
 
-app.listen(port,()=>{console.log("running on port "+port)})
+app.listen(port,()=>{
+  
+  setInterval(() => {
+    let difference = (Date.now()-response_stamp)/1000;
+    console.log(`Time Difference between the last request and response: ${difference}`);
+    if (difference > 10){
+      console.log("No response received...")
+      runSample(msg= null, event="sys.no-match-default")
+      response_stamp = Date.now();
+     }
+}, 2000); // Print every 2 seconds
+  
+  console.log("running on port "+port)
+
+})

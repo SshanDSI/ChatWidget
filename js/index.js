@@ -298,6 +298,7 @@ $(window).load(function() {
 
   }
 
+
   let promiseChain = Promise.resolve(); //starting with an empty resoved promise
 
   function fetchmsg_promise(){
