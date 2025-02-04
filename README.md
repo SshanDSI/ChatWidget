@@ -8,6 +8,8 @@ The widget now features the following:
 - Media Interface (Supports video specifically YouTube Videos)
 - Has YouTube events generated automatically
 - Promise Chaining in nodeJs for sequential message delivery
+- Silence Detection ( To send out messages to user when they either leave the chat or do not respond )
+- Active Multi-level Logging to log INFO, WARN, ERROR in the application 
 
 ## Next Steps..
 - Host the chatbot on the github pages to be able to share the same internally.
