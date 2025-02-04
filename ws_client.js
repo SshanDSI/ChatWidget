@@ -4,6 +4,11 @@ var VEvent="Message"; // flag for video events
 var dizText = document.getElementById('MSG')
 const socket = new WebSocket('ws://localhost:5000/send-msg')
 let promiseChain = Promise.resolve();
+var myVideo; // Making this a global variable to ensure accessibility
+var response_chatAPI = null;
+var response_User = null;
+const maxcount = 1;
+var count=0;
 
 // Handler when the socket connection is established
 socket.onopen = () => {
@@ -48,7 +53,7 @@ function DownScroll() {
   });
 }
 
-function sendtoServer() {
+async function sendtoServer() {
   data = new URLSearchParams();
       
   switch (VEvent){
@@ -81,18 +86,30 @@ function sendtoServer() {
       break;
     }
   
+  response_User = Date.now()
   socket.send(data)
       
 }
 
-function insertMessage(msg) {
+function insertMessage(msg,send2Server=true,end=false) {
   // msg = $('.message-input').val();
   if ($.trim(msg) == '') {
     return false;
   }
 
+  if (end){
+    console.log("Formatted for End of Conversation")
+    $('<div class="end-session">' + msg + '</div>').appendTo($('.mCSB_container')).addClass('new');
+  }
+  else{
+    console.log("Formatted for Regular Conversation")
   $('<div class="message message-personal">' + msg + '</div>').appendTo($('.mCSB_container')).addClass('new');
-  sendtoServer()
+}
+  if (send2Server){
+    console.log("Sent to Chat Server")
+    sendtoServer()
+  }
+  
   
   $('.message-input').val(null);
   updateScrollbar();
@@ -152,6 +169,7 @@ function onPlayerStateChange(event) {
   if (event.data === YT.PlayerState.ENDED) {
     console.log("Video has Completed... Prompt the user.. ");
     VEvent="Complete";
+    myVideo = null;
     sendtoServer();
   }
   else if (event.data === YT.PlayerState.PAUSED) {
@@ -190,6 +208,7 @@ function serverMessage_promise(response2) {
 // It includes handlers for various data types
 socket.onmessage = (event) => {
     try {
+        response_chatAPI = Date.now()
         const data = JSON.parse(event.data);
         for (let k=0; k<data.length; k++) {
           if (data[k].payload.fields?.data) { 
@@ -221,6 +240,39 @@ socket.onmessage = (event) => {
         console.log(error)
     }
   };
+
+// Silence Detection
+const interval = setInterval(() => {
+  if (response_User === null){
+    response_User = Date.now()
+  }
+  let difference = (Date.now()-response_User)/1000;
+  console.log(`Time Difference between the last request and response: ${difference}`);
+  if (difference > 10){
+
+    if (myVideo instanceof YT.Player){
+      if (myVideo.getPlayerState()===1){
+        // Skip when the video is being played..
+      }
+    } 
+    else{
+      // If the video isn't playing and the user hasn't responded, send an alert to the user.
+      console.log("No response received... Text Condition")
+      sendtoServer(" ").then(() => {
+      count++;
+        if (count>maxcount) {
+          clearInterval(interval)
+          console.log("Interval Cleared...")
+          insertMessage("-------------------------------End of Conversation-------------------------------",false,true)
+        }
+        console.log(count)
+      })
+      
+      
+    }
+
+   }
+}, 2000); // Check every 2 seconds
 
 
 // Event handler for when there is an error with the WebSocket connection
