@@ -7,6 +7,7 @@ const locationId = 'us-central1';
 const agentId = '4a392212-fd9e-49c7-b837-3869765711ac';
 const projectId = 'integral-kiln-396613';
 const languageCode = 'en';
+const logger = require("./logger")
 
 // // DialogFlow Parameters
 // const {SessionsClient} = require('@google-cloud/dialogflow-cx');
@@ -42,30 +43,28 @@ const wss = new WebSocket.Server({ noServer: true });
 
 // Functionality upon the connection with the client
 wss.on('connection', (ws) => {
-    console.log('Client connected');
-    // Sending message to a client
-    // ws.send("Hello from the Web socket server!!");
+    logger.info('Client connected',{sessionID : sessionId});
 
     // Handling messages from the client 
     ws.on('message',(message) => {
         const params = new URLSearchParams(message.toString());
-        console.log(`Received Message: ${params.get('MSG')}`);
-        console.log(`Received Event: ${params.get('EVENT')}`);
+        logger.debug(`Received Message: ${params.get('MSG')}`, {sessionID : sessionId});
+        logger.debug(`Received Event: ${params.get('EVENT')}`, {sessionID : sessionId});
         // The promise must resolve before sending the data to the socketClient
         chatAPI(params.get('MSG'),params.get('EVENT')).then((response) => {
-            console.log(JSON.stringify(response))
+            logger.debug(`String Message Before Sending to the client - ${JSON.stringify(response)}`, {sessionID : sessionId})
             ws.send(JSON.stringify(response))
         })
     }) 
 
     //handling what to do when the client disconnects from the server
     ws.on('close', () => {
-        console.log("Client disconnected from the server")
+        logger.info("Client disconnected from the server", {sessionID : sessionId})
     })
 
     //handling client connection error
-    ws.onerror =function () {
-        console.log("Some error occured")
+    ws.onerror =function (error) {
+        logger.info(`Some error occured ${error}`, {sessionID : sessionId})
     }
 
 });
@@ -73,7 +72,7 @@ wss.on('connection', (ws) => {
 async function chatAPI(msg=null, event=null) {
 
   // Create a new session
-  console.time('Dialogflow Request Time');
+  var df_request_start_time = process.hrtime.bigint()
   const client = new SessionsClient({apiEndpoint: 'us-central1-dialogflow.googleapis.com'});
   const sessionPath = client.projectLocationAgentSessionPath(projectId, locationId, agentId, sessionId);
   const request = {
@@ -95,17 +94,21 @@ async function chatAPI(msg=null, event=null) {
   }
   
   // Send request and log result
-  console.time("Intent Detect Time");
+  var df_intent_detect_start_time = process.hrtime.bigint()
   const [response] = await client.detectIntent(request);
-  console.timeEnd("Intent Detect Time");
-  console.timeEnd('Dialogflow Request Time');
+  var df_intent_detect_end_time = process.hrtime.bigint()
+  var df_request_end_time = process.hrtime.bigint()
+
+  logger.info(`DialogFlow Request Time : ${(df_request_end_time-df_request_start_time)/BigInt(10 ** 6)} ms`, {sessionID : sessionId})
+  logger.info(`Intent Detect Time : ${(df_intent_detect_end_time-df_intent_detect_start_time)/BigInt(10 ** 6)} ms`, {sessionID : sessionId})
+
   const payload = response.queryResult.responseMessages
   return payload;
 }
 
 // This is the http server where Express will listen
 const server = app.listen(port, () => {
-    console.log(`Server started on port ${port}`);
+    logger.info(`Server started on port ${port}`,{sessionID : sessionId});
     
   });
 
